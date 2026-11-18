@@ -1,0 +1,25 @@
+<idea-plugin url="https://github.com/sunpm/copy-line-reference">
+    <id>io.github.sunpm.copylinereference</id>
+    <name>Copy Line Reference</name>
+    <vendor url="https://github.com/sunpm">sunpm</vendor>
+    <description>Copy the file path and line numbers of an editor selection to the clipboard. Choose absolute or project-relative paths.</description>
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationConfigurable parentId="tools"
+            id="io.github.sunpm.copylinereference.settings"
+            displayName="Copy Line Reference"
+            instance="io.github.sunpm.linereference.PathFormatSettings"/>
+    </extensions>
+
+    <actions>
+        <action id="CopyLineReference.Copy"
+                class="io.github.sunpm.linereference.CopyLineReferenceAction"
+                text="Copy Line Reference">
+            <add-to-group group-id="EditorPopupMenu" anchor="after" relative-to-action="CopyReference"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="control alt shift P"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control meta C"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control meta C"/>
+        </action>
+    </actions>
+</idea-plugin>
