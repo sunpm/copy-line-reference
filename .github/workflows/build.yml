@@ -40,6 +40,7 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           name: plugin
@@ -47,4 +48,7 @@ jobs:
       - name: Publish plugin ZIP
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" dist/*.zip --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes
+        run: >-
+          gh release create "$GITHUB_REF_NAME" dist/*.zip
+          --repo "$GITHUB_REPOSITORY" --verify-tag
+          --notes-file "releases/$GITHUB_REF_NAME.md" --generate-notes

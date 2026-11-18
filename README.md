@@ -24,4 +24,6 @@ To change the shortcut, open **Settings → Keymap** and search for **Copy Line 
 
 With JDK 21 installed, run `./gradlew buildPlugin` (on Windows, `gradlew.bat buildPlugin`). The installable ZIP is written to `build/distributions/`.
 
-Push a version tag such as `v0.1.1` to build the plugin and attach its ZIP to a GitHub Release. The tag supplies the plugin version. To build a ZIP without publishing, run **Build and release** from the Actions tab on a branch.
+Write the user-facing changes in `releases/<tag>.md` (for example, `releases/v0.1.3.md`). Commit the file, then push the matching tag. GitHub Actions uses the tag as the plugin version and publishes the notes alongside the installable ZIP on [GitHub Releases](https://github.com/sunpm/copy-line-reference/releases).
+
+To build a ZIP without publishing, run **Build and release** from the Actions tab on a branch.
