@@ -20,6 +20,8 @@ java {
 
 intellijPlatform {
     buildSearchableOptions = false
+    // The settings panel uses plain Swing and has no GUI Designer forms to instrument.
+    instrumentCode = false
     pluginConfiguration {
         ideaVersion {
             untilBuild = provider { null }
