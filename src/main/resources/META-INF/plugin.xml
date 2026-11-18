@@ -16,7 +16,7 @@
         <action id="CopyLineReference.Copy"
                 class="io.github.sunpm.linereference.CopyLineReferenceAction"
                 text="Copy Line Reference">
-            <add-to-group group-id="EditorPopupMenu" anchor="after" relative-to-action="CopyReference"/>
+            <add-to-group group-id="EditorPopupMenu" anchor="first"/>
             <keyboard-shortcut keymap="$default" first-keystroke="control alt shift P"/>
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control meta C"/>
             <keyboard-shortcut keymap="Mac OS X" first-keystroke="control meta C"/>
