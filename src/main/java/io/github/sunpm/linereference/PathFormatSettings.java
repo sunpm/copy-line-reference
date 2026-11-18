@@ -24,6 +24,8 @@ public final class PathFormatSettings implements Configurable {
     @Override
     public JComponent createComponent() {
         format = new ComboBox<>(new String[]{"Absolute", "Relative to project root"});
+        // Measure the full labels instead of the default 20-character prefix.
+        format.setMinLength(Integer.MAX_VALUE);
         return FormBuilder.createFormBuilder()
                 .addLabeledComponent("Path format:", format)
                 .addComponentFillVertically(new JPanel(), 0)
