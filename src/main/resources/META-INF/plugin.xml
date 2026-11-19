@@ -1,8 +1,15 @@
 <idea-plugin url="https://github.com/sunpm/copy-line-reference">
     <id>io.github.sunpm.copylinereference</id>
     <name>Copy Line Reference</name>
-    <vendor url="https://github.com/sunpm">sunpm</vendor>
-    <description>Copy the file path and line numbers of an editor selection to the clipboard. Choose absolute or project-relative paths.</description>
+    <vendor url="https://github.com/sunpm">Sunpm</vendor>
+    <description><![CDATA[
+        <p>Copy a file path and the selected line numbers from the editor. Use a plain reference
+        such as <code>src/main.ts:12-18</code> or a Claude Code mention such as <code>@src/main.ts#L12-18</code>.
+        With no selection, the reference points to the line at the caret.</p>
+        <p>Use the editor context menu, or press <b>Control + Command + C</b> on macOS
+        or <b>Ctrl + Alt + Shift + P</b> on Windows and Linux.</p>
+        <p>Choose formats and absolute or project-relative paths in <b>Settings → Tools → Copy Line Reference</b>.</p>
+    ]]></description>
     <depends>com.intellij.modules.platform</depends>
 
     <extensions defaultExtensionNs="com.intellij">
@@ -20,6 +27,11 @@
             <keyboard-shortcut keymap="$default" first-keystroke="control alt shift P"/>
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control meta C"/>
             <keyboard-shortcut keymap="Mac OS X" first-keystroke="control meta C"/>
+        </action>
+        <action id="CopyLineReference.CopyForClaudeCode"
+                class="io.github.sunpm.linereference.CopyLineReferenceAction$ClaudeCode"
+                text="Copy for Claude Code">
+            <add-to-group group-id="EditorPopupMenu" anchor="after" relative-to-action="CopyLineReference.Copy"/>
         </action>
     </actions>
 </idea-plugin>

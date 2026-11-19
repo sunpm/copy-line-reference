@@ -5,12 +5,15 @@ on:
   workflow_dispatch:
   push:
     tags: ['v*']
+  release:
+    types: [published]
 
 permissions:
   contents: read
 
 jobs:
   build:
+    if: github.ref_type != 'tag'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,14 +22,7 @@ jobs:
           distribution: temurin
           java-version: '21'
       - uses: gradle/actions/setup-gradle@v5
-      - name: Build plugin
-        shell: bash
-        run: |
-          if [[ "$GITHUB_REF_TYPE" == tag ]]; then
-            ./gradlew buildPlugin "-PpluginVersion=${GITHUB_REF_NAME#v}"
-          else
-            ./gradlew buildPlugin
-          fi
+      - run: ./gradlew buildPlugin
       - uses: actions/upload-artifact@v4
         with:
           name: plugin
@@ -34,21 +30,90 @@ jobs:
           if-no-files-found: error
 
   release:
-    if: github.ref_type == 'tag'
-    needs: build
+    if: github.ref_type == 'tag' && startsWith(github.ref_name, 'v')
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    outputs:
+      published: ${{ steps.publish.outputs.published }}
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
+      - name: Prepare changelog
+        id: notes
+        shell: bash
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" != release ]] && gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "The release already exists. Its publication is handled by the release event."
+            exit 0
+          fi
+
+          notes="$RUNNER_TEMP/release.md"
+          jq -r '.release.body // empty | select(length > 0)' "$GITHUB_EVENT_PATH" > "$notes"
+          if [[ ! -s "$notes" ]]; then
+            if [[ -s "releases/$GITHUB_REF_NAME.md" ]]; then
+              cat "releases/$GITHUB_REF_NAME.md" > "$notes"
+              echo >> "$notes"
+            fi
+            gh api "repos/$GITHUB_REPOSITORY/releases/generate-notes" \
+              -f tag_name="$GITHUB_REF_NAME" --jq .body >> "$notes"
+          fi
+          gh api markdown -F "text=@$notes" -f mode=gfm -f context="$GITHUB_REPOSITORY" > "$RUNNER_TEMP/changes.html"
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-java@v4
+        if: steps.notes.outputs.ready == 'true'
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v5
+        if: steps.notes.outputs.ready == 'true'
+      - name: Build release ZIP
+        if: steps.notes.outputs.ready == 'true'
+        run: ./gradlew buildPlugin "-PpluginVersion=${GITHUB_REF_NAME#v}" "-PchangeNotesFile=$RUNNER_TEMP/changes.html"
+      - uses: actions/upload-artifact@v4
+        if: steps.notes.outputs.ready == 'true'
+        with:
+          name: plugin
+          path: build/distributions/*.zip
+          if-no-files-found: error
+          overwrite: true
+      - name: Publish GitHub release
+        id: publish
+        if: steps.notes.outputs.ready == 'true'
+        shell: bash
+        run: |
+          zip="build/distributions/copy-line-reference-${GITHUB_REF_NAME#v}.zip"
+          if [[ "$GITHUB_EVENT_NAME" == release ]]; then
+            gh release upload "$GITHUB_REF_NAME" "$zip" --clobber
+            if ! jq -e '.release.body | length > 0' "$GITHUB_EVENT_PATH" >/dev/null; then
+              gh release edit "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/release.md"
+            fi
+          else
+            flags=()
+            if [[ "$GITHUB_REF_NAME" == *-* ]]; then flags+=(--prerelease); fi
+            gh release create "$GITHUB_REF_NAME" "$zip" --verify-tag --title "$GITHUB_REF_NAME" \
+              --notes-file "$RUNNER_TEMP/release.md" "${flags[@]}"
+          fi
+          echo "published=true" >> "$GITHUB_OUTPUT"
+
+  marketplace:
+    needs: release
+    if: needs.release.outputs.published == 'true' && !github.event.release.prerelease && !contains(github.ref_name, '-')
+    runs-on: ubuntu-latest
+    steps:
       - uses: actions/download-artifact@v4
         with:
           name: plugin
           path: dist
-      - name: Publish plugin ZIP
+      - name: Submit ZIP to JetBrains Marketplace
         env:
-          GH_TOKEN: ${{ github.token }}
-        run: >-
-          gh release create "$GITHUB_REF_NAME" dist/*.zip
-          --repo "$GITHUB_REPOSITORY" --verify-tag
-          --notes-file "releases/$GITHUB_REF_NAME.md" --generate-notes
+          MARKETPLACE_TOKEN: ${{ secrets.JETBRAINS_MARKETPLACE_TOKEN }}
+        shell: bash
+        run: |
+          : "${MARKETPLACE_TOKEN:?Set the JETBRAINS_MARKETPLACE_TOKEN repository secret and rerun this job.}"
+          curl --fail-with-body --silent --show-error \
+            --header "Authorization: Bearer $MARKETPLACE_TOKEN" \
+            --form-string 'xmlId=io.github.sunpm.copylinereference' \
+            --form "file=@dist/copy-line-reference-${GITHUB_REF_NAME#v}.zip" \
+            https://plugins.jetbrains.com/api/updates/upload

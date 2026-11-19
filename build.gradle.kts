@@ -23,6 +23,7 @@ intellijPlatform {
     // The settings panel uses plain Swing and has no GUI Designer forms to instrument.
     instrumentCode = false
     pluginConfiguration {
+        changeNotes = providers.gradleProperty("changeNotesFile").map { file(it).readText() }
         ideaVersion {
             untilBuild = provider { null }
         }
