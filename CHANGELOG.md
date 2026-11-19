@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat(changelog): 根据提交和合并的 PR 自动生成更新日志
+
 ## v0.2.0
 
 - Enable **Claude Code** in **Settings → Tools → Copy Line Reference** to copy references such as `@src/main.ts#L12-18`. Enable both formats to see both actions in the editor context menu.
