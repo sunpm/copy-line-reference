@@ -1,0 +1,31 @@
+name: Update changelog
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  release:
+    types: [published]
+
+concurrency: update-changelog
+
+permissions:
+  contents: write
+
+jobs:
+  changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - run: bash scripts/changelog.sh > CHANGELOG.md
+      - name: Commit updated changelog
+        run: |
+          if git diff --quiet -- CHANGELOG.md; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- CHANGELOG.md
+          git commit -m 'docs(changelog): 同步更新日志' -m '按版本汇总主线提交与已合并的 PR。'
+          git push origin HEAD:main

@@ -40,6 +40,8 @@ jobs:
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Prepare changelog
         id: notes
         shell: bash
@@ -50,15 +52,7 @@ jobs:
           fi
 
           notes="$RUNNER_TEMP/release.md"
-          jq -r '.release.body // empty | select(length > 0)' "$GITHUB_EVENT_PATH" > "$notes"
-          if [[ ! -s "$notes" ]]; then
-            if [[ -s "releases/$GITHUB_REF_NAME.md" ]]; then
-              cat "releases/$GITHUB_REF_NAME.md" > "$notes"
-              echo >> "$notes"
-            fi
-            gh api "repos/$GITHUB_REPOSITORY/releases/generate-notes" \
-              -f tag_name="$GITHUB_REF_NAME" --jq .body >> "$notes"
-          fi
+          bash scripts/changelog.sh "$GITHUB_REF_NAME" > "$notes"
           gh api markdown -F "text=@$notes" -f mode=gfm -f context="$GITHUB_REPOSITORY" > "$RUNNER_TEMP/changes.html"
           echo "ready=true" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-java@v4
@@ -84,16 +78,15 @@ jobs:
         shell: bash
         run: |
           zip="build/distributions/copy-line-reference-${GITHUB_REF_NAME#v}.zip"
+          notes="$RUNNER_TEMP/release.md"
           if [[ "$GITHUB_EVENT_NAME" == release ]]; then
             gh release upload "$GITHUB_REF_NAME" "$zip" --clobber
-            if ! jq -e '.release.body | length > 0' "$GITHUB_EVENT_PATH" >/dev/null; then
-              gh release edit "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/release.md"
-            fi
+            gh release edit "$GITHUB_REF_NAME" --notes-file "$notes"
           else
             flags=()
             if [[ "$GITHUB_REF_NAME" == *-* ]]; then flags+=(--prerelease); fi
             gh release create "$GITHUB_REF_NAME" "$zip" --verify-tag --title "$GITHUB_REF_NAME" \
-              --notes-file "$RUNNER_TEMP/release.md" "${flags[@]}"
+              --notes-file "$notes" "${flags[@]}"
           fi
           echo "published=true" >> "$GITHUB_OUTPUT"
 

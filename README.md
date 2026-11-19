@@ -27,10 +27,9 @@ The existing shortcut uses the only enabled format, or **Copy Line Reference** w
 
 With JDK 21 installed, run `./gradlew buildPlugin` (on Windows, `gradlew.bat buildPlugin`). The installable ZIP is written to `build/distributions/`.
 
-Use a new `v` tag for each release. The tag determines the version in the ZIP. Update the [changelog](CHANGELOG.md) and write the user-facing notes in `releases/<tag>.md`.
+GitHub Actions updates the **Unreleased** section of the [changelog](CHANGELOG.md) from commits on `main` since the last stable tag. A standard GitHub merge contributes one entry with the PR title and number. Squashed and direct commits use their commit titles.
 
-- **From GitHub Releases**, publish a release for the tag. Actions attaches the ZIP and uses the description you entered. Leave it blank to use the notes file and GitHub's generated release notes.
-- **From Git**, push the tag. Actions builds the ZIP and creates the GitHub Release with the notes. A tag with a hyphen, such as `v0.2.0-rc.1`, creates a prerelease.
+When ready, push a new version tag such as `vX.Y.Z`, or publish it from GitHub Releases. Actions uses the same entries in the versioned changelog, GitHub Release, and plugin ZIP. Use a tag such as `vX.Y.Z-rc.1` for a prerelease.
 
 For stable releases, Actions submits the same ZIP to JetBrains Marketplace with the changelog embedded. Prereleases stay on GitHub. Configure the repository Actions secret `JETBRAINS_MARKETPLACE_TOKEN` once with a token from the plugin owner's [Marketplace profile](https://plugins.jetbrains.com/author/me/tokens). If the submission fails, rerun the failed Marketplace job. Updates become available in the IDE after Marketplace approval.
 
